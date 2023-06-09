@@ -2,7 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
+
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY);
+
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
 
 const app = express()
@@ -10,7 +13,6 @@ const port = process.env.PORT || 4000
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.5j7d2x6.mongodb.net/?retryWrites=true&w=majority`;
 // const uri = "mongodb+srv://<username>:<password>@cluster0.5j7d2x6.mongodb.net/?retryWrites=true&w=majority";
 
