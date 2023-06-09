@@ -86,6 +86,16 @@ async function run() {
         res.send({ token });
       })
 
+      app.post('/register-new-user',async(req, res) => {
+        const requester = req.body
+        const query = { email: requester.email }
+        const alreadyRegistered = await usersCollection.findOne(query)
+        if(alreadyRegistered){
+          return res.send({ message: 'You are already registered' })
+        }
+        const result = await usersCollection.insertOne(requester);
+        res.send(result);
+      })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
