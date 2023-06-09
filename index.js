@@ -37,6 +37,17 @@ async function run() {
 
 
 
+     // jwt token sender api
+
+     app.post('/jwt', (req, res) =>{
+        const requester = req.body;
+
+        const token = jwt.sign(requester, process.env.ACCESS_TOKEN_SECRET, {
+          expiresIn: '2h'
+        })
+
+        res.send({ token });
+      })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
