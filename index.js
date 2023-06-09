@@ -64,6 +64,16 @@ async function run() {
         next()
       }
 
+    const instructorVerifier = async(req, res, next) => {
+        const email = req.decoded.email
+        const query = { email : email}
+        const user = await usersCollection.findOne(query)
+        if(user?.role !== 'instructor'){
+          return res.status(403).send({error: true , message: 'You are not authorized to access this'})
+        }
+        next()
+      }
+
      // jwt token sender api
 
      app.post('/jwt', (req, res) =>{
