@@ -33,7 +33,7 @@ const validateJWT = async(req,res,next) =>{
     }
     const token = authorization.split(' ')[1];
 
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY, (error, decoded) => {
       if(error){
         return res.status(401).send({error: true, message: 'You are not authorized'})
       }
@@ -80,7 +80,7 @@ async function run() {
      app.post('/jwt', (req, res) =>{
         const requester = req.body;
 
-        const token = jwt.sign(requester, process.env.ACCESS_TOKEN_SECRET, {
+        const token = jwt.sign(requester, process.env.ACCESS_TOKEN_SECRET_KEY, {
           expiresIn: '2h'
         })
         // console.log("delivered")
@@ -101,6 +101,20 @@ async function run() {
       app.post('/add-class',validateJWT, async(req,res)=> {
         const newClass = req.body
         const result = await classCollection.insertOne(newClass)
+        res.send(result)
+      })
+      // instructor classes api
+      app.get('/instructor-class', validateJWT, async(req, res) => {
+        const email = req.query?.email;
+        if(!email){
+          return res.send([]);
+        }
+        const jwtDecodedEmail = req.decoded.email 
+        if(email !== jwtDecodedEmail){
+          return res.status(403).send({error: true, message: 'access --> forbidden'})
+        }
+        const query = { email : email};
+        const result = await classCollection.find(query).toArray();
         res.send(result)
       })
     // Send a ping to confirm a successful connection
