@@ -11,7 +11,8 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express()
 const port = process.env.PORT || 4000
 
-
+app.use(cors())
+app.use(express.json())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.5j7d2x6.mongodb.net/?retryWrites=true&w=majority`;
 // const uri = "mongodb+srv://<username>:<password>@cluster0.5j7d2x6.mongodb.net/?retryWrites=true&w=majority";
@@ -53,7 +54,7 @@ async function run() {
 
 
     const usersCollection = client.db("campNinja").collection("users");
-
+    const classCollection = client.db("campNinja").collection("classes");
     const adminVerifier = async(req, res, next) => {
         const email = req.decoded.email
         const query = { email : email}
@@ -82,10 +83,10 @@ async function run() {
         const token = jwt.sign(requester, process.env.ACCESS_TOKEN_SECRET, {
           expiresIn: '2h'
         })
-
+        // console.log("delivered")
         res.send({ token });
       })
-
+      // registering first time user to student
       app.post('/register-new-user',async(req, res) => {
         const requester = req.body
         const query = { email: requester.email }
@@ -95,6 +96,12 @@ async function run() {
         }
         const result = await usersCollection.insertOne(requester);
         res.send(result);
+      })
+      // class adding api for instructor
+      app.post('/add-class',validateJWT, async(req,res)=> {
+        const newClass = req.body
+        const result = await classCollection.insertOne(newClass)
+        res.send(result)
       })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
