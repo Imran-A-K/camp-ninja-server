@@ -124,8 +124,12 @@ async function run() {
         const result = await usersCollection.find().toArray();
         res.send(result);
       })
-      // getting all the classes to display at admin 
-      //
+
+      // getting all the classes to display at admin  
+      app.get('/classes',validateJWT, async (req, res) => {
+        const result = await classCollection.find().toArray();
+        res.send(result);
+      })
       // api for admin to make the user an admin
       app.patch('/users/make-admin/:userId',validateJWT, async(req, res) => {
         const userId = req.params.userId;
@@ -148,6 +152,30 @@ async function run() {
           }
         }
         const result = await usersCollection.updateOne(filter, updateRole);
+        res.send(result);
+      })
+      // api for admin to approve class
+      app.patch('/classes/approve-class/:userId',validateJWT, async(req, res) => {
+        const userId = req.params.userId;
+        const filter = { _id: new ObjectId(userId) }
+        const updateStatus = {
+          $set: {
+            status : 'Approved'
+          }
+        }
+        const result = await classCollectionCollection.updateOne(filter, updateStatus);
+        res.send(result);
+      })
+      // api for admin to deny class
+      app.patch('/classes/deny-class/:userId',validateJWT, async(req, res) => {
+        const userId = req.params.userId;
+        const filter = { _id: new ObjectId(userId) }
+        const updateStatus = {
+          $set: {
+            status : 'Denied'
+          }
+        }
+        const result = await classCollectionCollection.updateOne(filter, updateStatus);
         res.send(result);
       })
     // Send a ping to confirm a successful connection
