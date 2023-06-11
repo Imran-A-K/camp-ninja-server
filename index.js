@@ -108,7 +108,6 @@ async function run() {
         const email = req.query?.email;
         
         if(!email){
-          // console.log("email not matched")
           return res.send([]);
         }
         const jwtDecodedEmail = req.decoded.email 
@@ -119,6 +118,13 @@ async function run() {
         const result = await classCollection.find(query).toArray();
         res.send(result)
       })
+      // get all instructors to display at instructors page no verification needed
+      app.get('/instructors', async(req,res) => {
+        const filter = { role : "instructor" }
+        const result = await usersCollection.find(filter).toArray();
+        res.send(result);
+      })
+
       // getting all users to display at admin-dashboard manage users page
       app.get('/users',validateJWT, async (req, res) => {
         const result = await usersCollection.find().toArray();
