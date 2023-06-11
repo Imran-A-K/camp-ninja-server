@@ -104,18 +104,25 @@ async function run() {
         res.send(result)
       })
       // instructor classes api
-      app.get('/instructor-class', validateJWT, async(req, res) => {
+      app.get('/instructor-classes', validateJWT, async(req, res) => {
         const email = req.query?.email;
+        
         if(!email){
+          // console.log("email not matched")
           return res.send([]);
         }
         const jwtDecodedEmail = req.decoded.email 
         if(email !== jwtDecodedEmail){
           return res.status(403).send({error: true, message: 'access --> forbidden'})
         }
-        const query = { email : email};
+        const query = { instructorEmail : email};
         const result = await classCollection.find(query).toArray();
         res.send(result)
+      })
+      // getting all users to display at admin-dashboard manage users page
+      app.get('/users',validateJWT, async (req, res) => {
+        const result = await usersCollection.find().toArray();
+        res.send(result);
       })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
