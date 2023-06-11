@@ -179,6 +179,20 @@ async function run() {
         const result = await classCollection.updateOne(filter, updateStatus);
         res.send(result);
       })
+      // api for admin to give feedback class
+      app.patch('/classes/class-feedback/:classId',validateJWT, async(req, res) => {
+        const classId = req.params.classId;
+        const classFeedback = req.body
+        // console.log(classId,classFeedback)
+        const filter = { _id: new ObjectId(classId) }
+        const updateStatus = {
+          $set: {
+            feedback : classFeedback.feedback
+          }
+        }
+        const result = await classCollection.updateOne(filter, updateStatus);
+        res.send(result);
+      })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
