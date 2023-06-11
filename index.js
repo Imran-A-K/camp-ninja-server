@@ -124,6 +124,13 @@ async function run() {
         const result = await usersCollection.find(filter).toArray();
         res.send(result);
       })
+      // get all classes to display that are approved at classes page no verification needed
+      app.get('/approved-classes', async(req,res) => {
+        const filter = { status : "Approved" }
+        const result = await classCollection.find(filter).toArray();
+        res.send(result);
+      })
+
 
       // getting all users to display at admin-dashboard manage users page
       app.get('/users',validateJWT, async (req, res) => {
