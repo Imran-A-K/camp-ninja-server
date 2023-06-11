@@ -5,7 +5,7 @@ require('dotenv').config()
 
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY);
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 const app = express()
@@ -122,6 +122,32 @@ async function run() {
       // getting all users to display at admin-dashboard manage users page
       app.get('/users',validateJWT, async (req, res) => {
         const result = await usersCollection.find().toArray();
+        res.send(result);
+      })
+      // getting all the classes to display at admin 
+      //
+      // api for admin to make the user an admin
+      app.patch('/users/make-admin/:userId',validateJWT, async(req, res) => {
+        const userId = req.params.userId;
+        const filter = { _id: new ObjectId(userId) }
+        const updateRole = {
+          $set: {
+            role : 'admin'
+          }
+        }
+        const result = await usersCollection.updateOne(filter, updateRole);
+        res.send(result);
+      })
+      // api for admin to make the user an instructor
+      app.patch('/users/make-instructor/:userId',validateJWT, async(req, res) => {
+        const userId = req.params.userId;
+        const filter = { _id: new ObjectId(userId) }
+        const updateRole = {
+          $set: {
+            role : 'instructor'
+          }
+        }
+        const result = await usersCollection.updateOne(filter, updateRole);
         res.send(result);
       })
     // Send a ping to confirm a successful connection
