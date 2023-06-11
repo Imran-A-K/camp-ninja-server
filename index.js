@@ -155,27 +155,28 @@ async function run() {
         res.send(result);
       })
       // api for admin to approve class
-      app.patch('/classes/approve-class/:userId',validateJWT, async(req, res) => {
-        const userId = req.params.userId;
-        const filter = { _id: new ObjectId(userId) }
+      app.patch('/classes/approve-class/:classId',validateJWT, async(req, res) => {
+        const classId = req.params.classId;
+        // console.log(classId)
+        const filter = { _id: new ObjectId(classId) }
         const updateStatus = {
           $set: {
             status : 'Approved'
           }
         }
-        const result = await classCollectionCollection.updateOne(filter, updateStatus);
+        const result = await classCollection.updateOne(filter, updateStatus);
         res.send(result);
       })
       // api for admin to deny class
-      app.patch('/classes/deny-class/:userId',validateJWT, async(req, res) => {
-        const userId = req.params.userId;
-        const filter = { _id: new ObjectId(userId) }
+      app.patch('/classes/deny-class/:classId',validateJWT, async(req, res) => {
+        const classId = req.params.classId;
+        const filter = { _id: new ObjectId(classId) }
         const updateStatus = {
           $set: {
             status : 'Denied'
           }
         }
-        const result = await classCollectionCollection.updateOne(filter, updateStatus);
+        const result = await classCollection.updateOne(filter, updateStatus);
         res.send(result);
       })
     // Send a ping to confirm a successful connection
