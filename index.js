@@ -90,13 +90,13 @@ async function run() {
       // api for top 6 classes based on enrolled students using aggregate for better performances
       app.get('/popular-classes', async(req,res)=>{
         try {      
-          const topClasses = await classCollection.aggregate([
+          const popularClasses = await classCollection.aggregate([
             { $match: { status: 'Approved' } },
             { $sort: { enrolled: -1 } },
             { $limit: 6 }
           ]).toArray();
       
-          res.send(topClasses);
+          res.send(popularClasses);
         } catch (error) {
           res.status(500).send({ error:true, message: 'server error' });
         }
