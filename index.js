@@ -86,6 +86,22 @@ async function run() {
         // console.log("delivered")
         res.send({ token });
       })
+
+      // api for top 6 classes based on enrolled students using aggregate for better performances
+      app.get('/popular-classes', async(req,res)=>{
+        try {      
+          const topClasses = await classCollection.aggregate([
+            { $match: { status: 'Approved' } },
+            { $sort: { enrolled: -1 } },
+            { $limit: 6 }
+          ]).toArray();
+      
+          res.send(topClasses);
+        } catch (error) {
+          res.status(500).send({ error:true, message: 'server error' });
+        }
+      })
+
       // registering first time user to student
       app.post('/register-new-user',async(req, res) => {
         const requester = req.body
