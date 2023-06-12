@@ -87,7 +87,7 @@ async function run() {
         res.send({ token });
       })
 
-      // api for top 6 classes based on enrolled students using aggregate for better performances
+      // api for top 6 classes based on enrolled students using aggregate for better performances no need for jwt
       app.get('/popular-classes', async(req,res)=>{
         try {      
           const popularClasses = await classCollection.aggregate([
@@ -101,7 +101,15 @@ async function run() {
           res.status(500).send({ error:true, message: 'server error' });
         }
       })
-
+      // api for filtering approved classes no need for jwt
+      app.get('/approved-classes', async(req, res) =>{
+        try {      
+          const approvedClasses = await classCollection.find({ status: 'Approved' }).toArray();
+          res.send(approvedClasses);
+        } catch (error) {
+          res.status(500).send({ error: 'Server error' });
+        }
+      })
       // registering first time user to student
       app.post('/register-new-user',async(req, res) => {
         const requester = req.body
