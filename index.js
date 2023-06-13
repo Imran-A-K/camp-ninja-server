@@ -11,7 +11,13 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 const port = process.env.PORT || 4000
 
-app.use(cors())
+const corsOptions = {
+  origin: '*',
+  credentials: true,
+  optionSuccessStatus: 200,
+}
+app.use(cors(corsOptions))
+// app.use(cors())
 app.use(express.json())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.5j7d2x6.mongodb.net/?retryWrites=true&w=majority`;
@@ -49,7 +55,7 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
-    client.connect();
+    // client.connect();
 
 
 
@@ -339,6 +345,7 @@ async function run() {
         const classField = await classCollection.findOne(filter);
         // console.log(classField)
         const newEnrollment = { ...classField, student:payment.student, studentEmail: payment.studentEmail }
+        delete newEnrollment._id
         const insertEnroll = await enrolledCollection.insertOne(newEnrollment)
         const findClass = { _id: new ObjectId(payment.classId) }
         const updatedClass = await classCollection.findOneAndUpdate(
