@@ -49,12 +49,15 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
-    client.connect();
+    // client.connect();
 
 
 
     const usersCollection = client.db("campNinja").collection("users");
     const classCollection = client.db("campNinja").collection("classes");
+    const bookedClassesCollection = client.db("campNinja").collection("bookedClasses");
+    const paymentsCollection = client.db("campNinja").collection("payments");
+    const enrolledCollection = client.db("campNinja").collection("enrolled");
     const adminVerifier = async(req, res, next) => {
         const email = req.decoded.email
         const query = { email : email}
@@ -102,14 +105,14 @@ async function run() {
         }
       })
       // api for filtering approved classes no need for jwt
-      app.get('/approved-classes', async(req, res) =>{
-        try {      
-          const approvedClasses = await classCollection.find({ status: 'Approved' }).toArray();
-          res.send(approvedClasses);
-        } catch (error) {
-          res.status(500).send({ error: 'Server error' });
-        }
-      })
+      // app.get('/approved-classes', async(req, res) =>{
+      //   try {      
+      //     const approvedClasses = await classCollection.find({ status: 'Approved' }).toArray();
+      //     res.send(approvedClasses);
+      //   } catch (error) {
+      //     res.status(500).send({ error: 'Server error' });
+      //   }
+      // })
       // registering first time user to student
       app.post('/register-new-user',async(req, res) => {
         const requester = req.body
@@ -127,6 +130,12 @@ async function run() {
         const result = await classCollection.insertOne(newClass)
         res.send(result)
       })
+      // class booking api for student
+      app.post('/book-class',validateJWT, async(req,res)=> {
+        const newBooking = req.body
+        const result = await bookedClassesCollection.insertOne(newBooking)
+        res.send(result)
+      })
       // instructor classes api
       app.get('/instructor-classes', validateJWT, async(req, res) => {
         const email = req.query?.email;
@@ -142,6 +151,28 @@ async function run() {
         const result = await classCollection.find(query).toArray();
         res.send(result)
       })
+      // student selected classes api
+      app.get('/students-selected-classes', validateJWT, async(req, res) => {
+        const email = req.query?.email;
+        
+        if(!email){
+          return res.send([]);
+        }
+        const jwtDecodedEmail = req.decoded.email 
+        if(email !== jwtDecodedEmail){
+          return res.status(403).send({error: true, message: 'access --> forbidden'})
+        }
+        const query = { studentEmail : email};
+        const result = await bookedClassesCollection.find(query).toArray();
+        res.send(result)
+      })
+      // delete selected class api for student
+      app.delete('/students-selected-classes', async(req,res) => {
+        const id = req.query?.id;
+        const query = { _id : new ObjectId(id) }
+        const result = await bookedClassesCollection.deleteOne(query)
+        res.send(result);
+      })
       // get all instructors to display at instructors page no verification needed
       app.get('/instructors', async(req,res) => {
         const filter = { role : "instructor" }
@@ -155,6 +186,23 @@ async function run() {
         res.send(result);
       })
 
+      // user role getting api 
+      app.get('/user-role/:email', validateJWT, async(req,res)=>{
+       
+        try {
+
+          const email  = req.params.email;
+          const user = await usersCollection.findOne({ email });
+          if (!user) {
+            return res.status(404).send({ error: 'User not found' });
+          }
+          const role = user.role;
+      
+          res.send({ role });
+        } catch (error) {
+          res.status(500).send({ error: 'Server error' });
+        }
+      })
 
       // getting all users to display at admin-dashboard manage users page
       app.get('/users',validateJWT, async (req, res) => {
@@ -204,6 +252,41 @@ async function run() {
         const result = await classCollection.updateOne(filter, updateStatus);
         res.send(result);
       })
+      // api for student to view my enrolled classes
+      // instructor classes api
+      app.get('/student-enrolled-classes', validateJWT, async(req, res) => {
+        const email = req.query?.email;
+        
+        if(!email){
+          return res.send([]);
+        }
+        const jwtDecodedEmail = req.decoded.email 
+        if(email !== jwtDecodedEmail){
+          return res.status(403).send({error: true, message: 'access --> forbidden'})
+        }
+        const query = { studentEmail : email};
+        const result = await enrolledCollection.find(query).toArray();
+        res.send(result)
+      })
+      app.get('/payment-history', async(req,res)=>{
+        try {
+          const email = req.query?.email;
+      
+          const pipeline = [
+            
+            { $match: { email } },
+            
+            { $sort: { date: -1,price: -1 } }
+          ];
+      
+          const payments = await paymentsCollection.aggregate(pipeline).toArray();
+      
+          res.send(payments);
+        } catch (error) {
+          
+          res.status(500).send({ error: 'Server error' });
+        }
+      })
       // api for admin to deny class
       app.patch('/classes/deny-class/:classId',validateJWT, async(req, res) => {
         const classId = req.params.classId;
@@ -230,6 +313,41 @@ async function run() {
         const result = await classCollection.updateOne(filter, updateStatus);
         res.send(result);
       })
+    // create payment intent api
+    app.post('/create-payment-intent', validateJWT, async (req, res) => {
+      const  price  = req.body.price
+      if (!price){
+        return
+      }
+      const amount = parseFloat(price)*100
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card'],
+      })
+
+      res.send({ clientSecret: paymentIntent.client_secret})
+    })
+    // payment api
+    app.post('/payments',validateJWT, async(req, res) => {
+      const payment = req.body;
+      // console.log(payment)
+      const insertResult = await paymentsCollection.insertOne(payment)
+      const query = { _id: new ObjectId(payment.bookedClassId)  }
+      const deleteResult = await bookedClassesCollection.deleteOne(query)
+      const filter = { _id: new ObjectId(payment.classId)};
+        const classField = await classCollection.findOne(filter);
+        // console.log(classField)
+        const newEnrollment = { ...classField, student:payment.student, studentEmail: payment.studentEmail }
+        const insertEnroll = await enrolledCollection.insertOne(newEnrollment)
+        const findClass = { _id: new ObjectId(payment.classId) }
+        const updatedClass = await classCollection.findOneAndUpdate(
+          filter,
+          { $inc: { enrolled: 1, availableSeats: -1 } },
+          { returnOriginal: false }
+        );
+      res.send({insertResult, deleteResult,updatedClass,insertEnroll})
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
