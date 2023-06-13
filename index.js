@@ -167,7 +167,7 @@ async function run() {
         res.send(result)
       })
       // delete selected class api for student
-      app.delete('/students-selected-classes', async(req,res) => {
+      app.delete('/students-selected-classes',validateJWT, async(req,res) => {
         const id = req.query?.id;
         const query = { _id : new ObjectId(id) }
         const result = await bookedClassesCollection.deleteOne(query)
@@ -253,7 +253,7 @@ async function run() {
         res.send(result);
       })
       // api for student to view my enrolled classes
-      // instructor classes api
+      
       app.get('/student-enrolled-classes', validateJWT, async(req, res) => {
         const email = req.query?.email;
         
@@ -268,7 +268,7 @@ async function run() {
         const result = await enrolledCollection.find(query).toArray();
         res.send(result)
       })
-      app.get('/payment-history', async(req,res)=>{
+      app.get('/payment-history',validateJWT, async(req,res)=>{
         try {
           const email = req.query?.email;
       
